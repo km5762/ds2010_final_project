@@ -8,7 +8,7 @@ data_path = Path(__file__).parent / "listings.csv"
 crime_path = Path(__file__).parent / "crime_house-price_by_neighbourhood.csv"
 
 
-def create_df() -> None:
+def create_df() -> pd.DataFrame:
     df = pd.read_csv(
         data_path, dtype={"id": int}, parse_dates=["host_since"], date_format="%d/%m/%y"
     )
@@ -56,7 +56,7 @@ def create_df() -> None:
     )
 
     # Meta column
-    df.drop(columns=["neighbourhood_link"])
+    df = df.drop(columns=["neighbourhood_link"])
 
     return df
 
