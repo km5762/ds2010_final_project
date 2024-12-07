@@ -23,4 +23,4 @@ for index, row in df.iterrows():
 
     df.at[index, "median_housing_cost"] = float(housing_prices[0].text.strip().replace(',', '').replace('$', '')) if housing_prices else None
 
-df.to_excel("dataset/augmented.xlsx", index=False)
+df.to_excel("augmented.xlsx", index=False)
