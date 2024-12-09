@@ -1,7 +1,8 @@
+from scipy.stats import randint
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV, train_test_split, cross_val_score
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 
@@ -21,28 +22,31 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-param_grid = {
-    'n_estimators': [200, 500, 800, 1000],
-    'max_depth': [10, 20, 30, None],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4]
-}
-
 rfr = RandomForestRegressor(random_state=42)
 
-grid_search = GridSearchCV(
+param_dist = {
+    'n_estimators': [100, 200, 300, 500, 800, 1000], 
+    'max_depth': [None, 10, 20, 30, 40],            
+    'min_samples_split': randint(2, 20),              
+    'min_samples_leaf': randint(1, 20),             
+    'max_features': [1.0, 'sqrt', 'log2', None],         
+}
+
+random_search = RandomizedSearchCV(
     estimator=rfr,
-    param_grid=param_grid,
-    cv=5,
+    param_distributions=param_dist,
+    n_iter=100,  
+    cv=2,
     scoring='r2',
     verbose=2,
-    n_jobs=-1 
+    random_state=42,
+    n_jobs=-1
 )
 
-grid_search.fit(X_train_scaled, y_train)
+random_search.fit(X_train_scaled, y_train)
 
-best_rfr = grid_search.best_estimator_
-print("Best Parameters:", grid_search.best_params_)
+best_rfr = random_search.best_estimator_
+print("Best Parameters:", random_search.best_params_)
 
 y_pred = best_rfr.predict(X_test_scaled)
 mse = mean_squared_error(y_test, y_pred)
