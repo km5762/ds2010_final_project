@@ -1,13 +1,13 @@
 from math import sqrt
-import pandas as pd
 from pathlib import Path
+
 import numpy as np
-import matplotlib.pyplot as plt
-
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import mean_squared_error
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import cross_val_score, train_test_split
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # https://mljar.com/blog/save-load-random-forest/
 
@@ -44,7 +44,6 @@ random_forest = RandomForestRegressor(
     min_samples_leaf=15,
     n_estimators=600,
     n_jobs=-1,
-    verbose=1,
 )
 
 
@@ -123,6 +122,30 @@ def forest(df: pd.DataFrame):
     print(f"Cross-validation scores: {cv_scores}")
     print(f"Mean R² score: {np.mean(cv_scores):.4f}")
     print("-" * 30)
+    plot_accuracy(y_test, y_pred, mse, np.mean(cv_scores))
+
+
+def plot_accuracy(y_test, y_pred, mse, r2):
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(x=y_test, y=y_pred)
+    plt.title("Actual vs Predicted Price Per Night", fontsize=16)
+    plt.xlabel("Actual Price Per Night", fontsize=14)
+    plt.ylabel("Predicted Price Per Night", fontsize=14)
+    plt.plot(
+        [min(y_test), max(y_test)],
+        [min(y_test), max(y_test)],
+        color="red",
+        linestyle="--",
+    )
+    plt.text(
+        0.05,
+        0.95,
+        f"R^2: {r2:.3f}\nMSE: {mse:.3f}",
+        transform=plt.gca().transAxes,
+        fontsize=12,
+        verticalalignment="top",
+    )
+    plt.show()
 
 
 if __name__ == "__main__":
