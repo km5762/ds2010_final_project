@@ -7,7 +7,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score, train_test_split
 import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
 import seaborn as sns
+
 
 # https://mljar.com/blog/save-load-random-forest/
 
@@ -89,14 +91,18 @@ def main() -> None:
     # While we may be losing oddball properties, such as the one random villa overlooking the la basin thats 3k a night, this will do well for most houses in la county
     mean_y = df["price_night"].mean()
     std_y = df["price_night"].std()
+    print(f"Orign price mean: {mean_y}")
+    print(f"Orign price std: {std_y}")
     df["z_score"] = (df["price_night"] - mean_y) / std_y
 
-    df = df[np.abs(df["z_score"]) <= 3.5]
+    df = df[np.abs(df["z_score"]) <= 4]
     df = df.drop(columns=["z_score"])
 
     print(f"Num samples: {len(df)}")
     print(f"Min price: {df["price_night"].min()}")
     print(f"Max price: {df["price_night"].max()}")
+    print(f"price mean: {df["price_night"].mean()}")
+    print(f"price std: {df["price_night"].std()}")
 
     forest(df)
 
@@ -122,12 +128,13 @@ def forest(df: pd.DataFrame):
     print(f"Cross-validation scores: {cv_scores}")
     print(f"Mean R² score: {np.mean(cv_scores):.4f}")
     print("-" * 30)
+
     plot_accuracy(y_test, y_pred, mse, np.mean(cv_scores))
 
 
 def plot_accuracy(y_test, y_pred, mse, r2):
     plt.figure(figsize=(8, 6))
-    sns.scatterplot(x=y_test, y=y_pred)
+    ax = sns.scatterplot(x=y_test, y=y_pred)
     plt.title("Actual vs Predicted Price Per Night", fontsize=16)
     plt.xlabel("Actual Price Per Night", fontsize=14)
     plt.ylabel("Predicted Price Per Night", fontsize=14)
@@ -145,7 +152,42 @@ def plot_accuracy(y_test, y_pred, mse, r2):
         fontsize=12,
         verticalalignment="top",
     )
+
+    draw_ellipses(ax, y_test, y_pred)
+    # ellipses go negative so just clamp these
+    ax.set_xlim(0, max(y_test) * 1.1)
+    ax.set_ylim(0, max(y_pred) * 1.1)
+    plt.legend()
     plt.show()
+
+
+def draw_ellipses(ax, x, y, deviations=[1, 2, 3, 4]):
+    cm = plt.colormaps["brg"]
+    cov = np.cov(x, y)
+    eigvals, eigvecs = np.linalg.eigh(cov)
+
+    angle = np.degrees(np.arctan2(*eigvecs[:, 0][::-1]))
+
+    x_mean, y_mean = np.mean(x), np.mean(y)
+
+    num_deviations = len(deviations)
+    colors = (
+        tuple(float(c) for c in cm(i / (num_deviations - 1)))
+        for i in range(num_deviations)
+    )
+    for n_std, color in zip(deviations, colors):
+        width, height = 2 * n_std * np.sqrt(eigvals)
+        ellipse = Ellipse(
+            (x_mean, y_mean),
+            width,
+            height,
+            angle=angle,
+            edgecolor=color,
+            facecolor="none",
+            linewidth=1.5,
+            label=f"{n_std} SD",
+        )
+        ax.add_patch(ellipse)
 
 
 if __name__ == "__main__":
