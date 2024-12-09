@@ -7,7 +7,7 @@ df = pd.read_excel("listings.xlsx", sheet_name="crime rates")
 for index, row in df.iterrows():
     link = row["neighbourhood_link"]
 
-    if pd.isna(link) or link == "error" or link == "n/a":
+    if pd.isna(link) or link == "drop":
         continue
 
     response = requests.get(link)
