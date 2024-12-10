@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 dataset = pd.read_csv('dataset/listings_dataset.csv')
 
@@ -34,6 +35,25 @@ y = df['review_scores_rating']
 coefficients = np.polyfit(x, y, deg=1)
 slope, intercept = coefficients
 regression_line = slope * x + intercept
+
+# Compute predictions using the regression line
+y_pred = slope * x + intercept
+
+# Calculate R^2
+r2 = r2_score(y, y_pred)
+
+# Calculate MSE and RMSE
+mse = mean_squared_error(y, y_pred)
+rmse = np.sqrt(mse)
+
+# Calculate MAE
+mae = mean_absolute_error(y, y_pred)
+
+# Print metrics
+print(f"R^2: {r2:.2f}")
+print(f"MSE: {mse:.2f}")
+print(f"RMSE: {rmse:.2f}")
+print(f"MAE: {mae:.2f}")
 
 # Plot the two columns as a line plot
 df.plot.scatter(x='ratio', y='review_scores_rating')
