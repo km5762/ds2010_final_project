@@ -124,6 +124,19 @@ def forest(df: pd.DataFrame):
 
     y_pred = random_forest.predict(X_test)
 
+    # Forest importance
+    importances = random_forest.feature_importances_
+    forest_std = np.std(
+        [tree.feature_importances_ for tree in random_forest.estimators_], axis=0
+    )
+    feature_names = [f"{name}" for name in X.columns]
+    forest_importances = pd.Series(importances, index=feature_names)
+    fig, Fax = plt.subplots()
+    forest_importances.plot.bar(yerr=forest_std, ax=Fax)
+    Fax.set_title("Feature importances using MDI")
+    Fax.set_ylabel("Mean decrease in impurity")
+    fig.tight_layout()
+
     mse = mean_squared_error(y_test, y_pred)
     rmse = sqrt(mse)
 
