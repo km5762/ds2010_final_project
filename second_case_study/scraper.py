@@ -2,7 +2,7 @@ from lxml import html
 import pandas as pd
 import requests
 
-df = pd.read_excel("listings.xlsx", sheet_name="crime rates")
+df = pd.read_excel("second_case_study/listings.xlsx", sheet_name="crime rates")
 
 for index, row in df.iterrows():
     link = row["neighbourhood_link"]
@@ -23,4 +23,4 @@ for index, row in df.iterrows():
 
     df.at[index, "median_housing_cost"] = float(housing_prices[0].text.strip().replace(',', '').replace('$', '')) if housing_prices else None
 
-df.to_excel("augmented.xlsx", index=False)
+df.to_excel("second_case_study/augmented.xlsx", index=False)

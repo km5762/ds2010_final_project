@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import mannwhitneyu
 
-data = pd.read_csv("listings_dataset.csv")
+data = pd.read_csv("dataset/listings_dataset.csv")
 
 data['review_scores_rating'] = data['review_scores_rating'].fillna(0) # where review_scores_rating is NA, put a 0
 

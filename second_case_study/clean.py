@@ -1,7 +1,7 @@
 import pandas as pd
 
-listings = pd.read_excel("listings.xlsx", sheet_name="listings")
-augmented = pd.read_excel("augmented.xlsx")
+listings = pd.read_excel("second_case_study/listings.xlsx", sheet_name="listings")
+augmented = pd.read_excel("second_case_study/augmented.xlsx")
 
 augmented_listings = pd.merge(listings, augmented, "inner", "neighbourhood_cleansed")
 
@@ -15,4 +15,4 @@ augmented_listings = augmented_listings[
     (augmented_listings["median_housing_cost"] <= housing_cost_threshold)
 ]
 
-augmented_listings.to_excel("augmented_listings.xlsx", index=False)
+augmented_listings.to_excel("second_case_study/augmented_listings.xlsx", index=False)
