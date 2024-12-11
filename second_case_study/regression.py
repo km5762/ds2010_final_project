@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_excel("augmented_listings.xlsx")
+df = pd.read_excel("second_case_study/augmented_listings.xlsx")
 
 df.dropna(subset=['price_night', 'crime_rate', 'median_housing_cost'], inplace=True)
 
