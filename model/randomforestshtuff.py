@@ -8,12 +8,14 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score, train_test_split
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
+from matplotlib.lines import Line2D
 import seaborn as sns
 
 
 # https://mljar.com/blog/save-load-random-forest/
 
 pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns", None)
 
 data_path = Path(__file__).parent / "cleaned_listings.csv"
 
@@ -89,21 +91,23 @@ def main() -> None:
     )
 
     # While we may be losing oddball properties, such as the one random villa overlooking the la basin thats 3k a night, this will do well for most houses in la county
+    print(f"Orig Num samples: {len(df)}")
     mean_y = df["price_night"].mean()
     std_y = df["price_night"].std()
-    print(f"Orign price mean: {mean_y}")
-    print(f"Orign price std: {std_y}")
     df["z_score"] = (df["price_night"] - mean_y) / std_y
 
     df = df[np.abs(df["z_score"]) <= 4]
     df = df.drop(columns=["z_score"])
 
     print(f"Num samples: {len(df)}")
+    print(f"Orignal price mean: {mean_y}")
+    print(f"Orignal price std: {std_y}")
     print(f"Min price: {df["price_night"].min()}")
     print(f"Max price: {df["price_night"].max()}")
     print(f"price mean: {df["price_night"].mean()}")
     print(f"price std: {df["price_night"].std()}")
 
+    # print(df.head())
     forest(df)
 
 
@@ -135,9 +139,9 @@ def forest(df: pd.DataFrame):
 def plot_accuracy(y_test, y_pred, mse, r2):
     plt.figure(figsize=(8, 6))
     ax = sns.scatterplot(x=y_test, y=y_pred)
-    plt.title("Actual vs Predicted Price Per Night", fontsize=16)
-    plt.xlabel("Actual Price Per Night", fontsize=14)
-    plt.ylabel("Predicted Price Per Night", fontsize=14)
+    plt.title("Actual vs Predicted Price Per Night for Listing", fontsize=16)
+    plt.xlabel("Actual Price Per Night for Listing", fontsize=14)
+    plt.ylabel("Predicted Price Per Night for Listing", fontsize=14)
     plt.plot(
         [min(y_test), max(y_test)],
         [min(y_test), max(y_test)],
@@ -157,24 +161,40 @@ def plot_accuracy(y_test, y_pred, mse, r2):
     # ellipses go negative so just clamp these
     ax.set_xlim(0, max(y_test) * 1.1)
     ax.set_ylim(0, max(y_pred) * 1.1)
-    plt.legend()
+    plt.legend(loc="lower right")
     plt.show()
 
 
-def draw_ellipses(ax, x, y, deviations=[1, 2, 3, 4]):
-    cm = plt.colormaps["brg"]
-    cov = np.cov(x, y)
-    eigvals, eigvecs = np.linalg.eigh(cov)
-
-    angle = np.degrees(np.arctan2(*eigvecs[:, 0][::-1]))
-
-    x_mean, y_mean = np.mean(x), np.mean(y)
-
+def draw_ellipses(ax: plt.Axes, y_test, y_pred, deviations=[1, 2, 3, 4]):
     num_deviations = len(deviations)
+    cm = plt.colormaps["brg"]
     colors = (
         tuple(float(c) for c in cm(i / (num_deviations - 1)))
         for i in range(num_deviations)
     )
+
+    eigvals, eigvecs = np.linalg.eigh(np.cov(y_test, y_pred))
+    x_mean, y_mean = np.mean(y_test), np.mean(y_pred)
+
+    angle = np.degrees(np.arctan2(*eigvecs[:, 0][::-1]))
+    print("tan(angle)", np.tan(np.radians(angle)))
+    slope = np.tan(np.radians(angle))
+
+    plt.axline(
+        (x_mean, y_mean),
+        slope=slope,
+        color="green",
+        linestyle="-.",
+        label="Principle variance axis",
+    )
+    plt.axline(
+        (x_mean, y_mean),
+        slope=-(1 / slope),
+        linestyle="-.",
+        color="black",
+        label="Secondary variance axis",
+    )
+
     for n_std, color in zip(deviations, colors):
         width, height = 2 * n_std * np.sqrt(eigvals)
         ellipse = Ellipse(
