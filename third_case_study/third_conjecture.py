@@ -2,25 +2,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import seaborn as sns
+
 
 dataset = pd.read_csv('dataset/listings_dataset.csv')
 
-#converting to dataframe
+# Converting to DataFrame
 df = pd.DataFrame(dataset)
 
-#rename column
-df.rename(columns={'accomodates/bathrooms ratio' : 'ratio'}, inplace=True)
-print(df['ratio'].head(20))
-print(df.columns)
+# Rename column
+df.rename(columns={'accomodates/bathrooms ratio': 'ratio'}, inplace=True)
 
-# Select 'ratio' and 'review_scores_rating' columns
-df = df[['ratio', 'review_scores_rating']]
+# Select relevant columns
+df = df[['ratio', 'review_scores_rating', 'accommodates', 'bathrooms']]
 
-#converting to numeric
+# Converting to numeric
 df['ratio'] = pd.to_numeric(df['ratio'], errors='coerce')
 df['review_scores_rating'] = pd.to_numeric(df['review_scores_rating'], errors='coerce')
+df['accommodates'] = pd.to_numeric(df['accommodates'], errors='coerce')
+df['bathrooms'] = pd.to_numeric(df['bathrooms'], errors='coerce')
 
-#drop null values
+# Drop null values
 df = df.dropna()
 ratio_bin_edges = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 25]  # Define bin edges
 ratio_bin_labels = ['0-1', '1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10', '10-11', '11-25',]  # Define labels for bins
@@ -49,48 +51,75 @@ plt.ylabel('Average Ratio')
 plt.title('Average Ratio by Rating Bin')
 plt.show()
 
-correlation = df['ratio'].corr(df['review_scores_rating'])
 
-print(f"Correlation between 'ratio' and 'review_scores_rating': {correlation}")
+# Calculate and print correlation between each variable and rating
+# correlation_ratio = df['ratio'].corr(df['review_scores_rating'])
+# correlation_accommodates = df['accommodates'].corr(df['review_scores_rating'])
+# correlation_bathrooms = df['bathrooms'].corr(df['review_scores_rating'])
 
-#regression line
-x = df['ratio']
-y = df['review_scores_rating']
+# print(f"Correlation between 'ratio' and 'review_scores_rating': {correlation_ratio}")
+# print(f"Correlation between 'accommodates' and 'review_scores_rating': {correlation_accommodates}")
+# print(f"Correlation between 'bathrooms' and 'review_scores_rating': {correlation_bathrooms}")
 
-# Fit a regression line
-coefficients = np.polyfit(x, y, deg=1)
-slope, intercept = coefficients
-regression_line = slope * x + intercept
+def plot_scatter_and_regression(x, y, x_label, y_label, title):
+    # Ensure valid inputs (no NaNs)
+    mask = ~np.isnan(x) & ~np.isnan(y)
+    x, y = x[mask], y[mask]
+    
+    # Fit a regression line
+    coefficients = np.polyfit(x, y, deg=1)
+    slope, intercept = coefficients
+    regression_line = slope * x + intercept
 
-# Compute predictions using the regression line
-y_pred = slope * x + intercept
+    # Calculate metrics
+    y_pred = regression_line
+    r2 = r2_score(y, y_pred)
+    mse = mean_squared_error(y, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y, y_pred)
+    correlation = np.corrcoef(x, y)[0, 1]
 
-# Calculate R^2
-r2 = r2_score(y, y_pred)
+    # Print metrics
+    print(f"Slope: {slope}, Intercept: {intercept}")
 
-# Calculate MSE and RMSE
-mse = mean_squared_error(y, y_pred)
-rmse = np.sqrt(mse)
+    print(f"{title}")
+    print(f"Correlation Coefficient: {correlation:.2f}")
+    print(f"R^2: {r2:.2f}")
+    print(f"MSE: {mse:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+    print(f"MAE: {mae:.2f}\n")
 
-# Calculate MAE
-mae = mean_absolute_error(y, y_pred)
+    # Scatter plot
+    plt.scatter(x, y, label='Data points')
+    plt.plot(x, regression_line, color='red', label=f'Regression Line (y={slope:.2f}x + {intercept:.2f})')
 
-# Print metrics
-print(f"R^2: {r2:.2f}")
-print(f"MSE: {mse:.2f}")
-print(f"RMSE: {rmse:.2f}")
-print(f"MAE: {mae:.2f}")
+    # Add labels and title
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.show()
 
-# Plot the two columns as a line plot
-df.plot.scatter(x='ratio', y='review_scores_rating')
-plt.plot(x, regression_line, color='red', label=f'Regression Line (y={slope:.2f}x + {intercept:.2f})')
+# Ensure 'df' has no missing values for the required columns
+df = df.dropna(subset=['accommodates', 'bathrooms', 'review_scores_rating', 'ratio'])
 
-# Add labels and title
-plt.title("Scatter Plot with Regression Line")
-plt.xlabel("Ratio")
-plt.ylabel("Review Scores Rating")
-plt.legend()
+# Plot for ratio vs review_scores_rating
+plot_scatter_and_regression(
+    df['ratio'].values, df['review_scores_rating'].values,
+    x_label="Ratio", y_label="Review Scores Rating",
+    title="Scatter Plot: Ratio vs Review Scores Rating"
+)
 
-# Show the plot
-plt.show()
+# Plot for accommodates vs review_scores_rating
+plot_scatter_and_regression(
+    df['accommodates'].values, df['review_scores_rating'].values,
+    x_label="Accommodates", y_label="Review Scores Rating",
+    title="Scatter Plot: Accommodates vs Review Scores Rating"
+)
 
+# Plot for bathrooms vs review_scores_rating
+plot_scatter_and_regression(
+    df['bathrooms'].values, df['review_scores_rating'].values,
+    x_label="Bathrooms", y_label="Review Scores Rating",
+    title="Scatter Plot: Bathrooms vs Review Scores Rating"
+)
